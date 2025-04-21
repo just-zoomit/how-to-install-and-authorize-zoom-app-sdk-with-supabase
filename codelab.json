@@ -1,0 +1,25 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2025-04-21T13:50:10-04:00",
+  "id": "how-to-za-install–zoom-supa-auth–nextjs",
+  "duration": 8,
+  "title": "Install and authorize multi-feature app integration: Zoom App, Team Chat, and Supabase Auth",
+  "authors": "Donte",
+  "summary": "How to install and authorize Zoom App SDK with Supabase",
+  "source": "za-chatbot-install--auth-supa--nextjs.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "sample"
+  ],
+  "tags": [
+    "medium"
+  ],
+  "feedback": "https://devforum.zoom.us/c/zoom-apps",
+  "url": "how-to-za-install–zoom-supa-auth–nextjs"
+}
