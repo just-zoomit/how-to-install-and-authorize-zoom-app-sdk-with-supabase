@@ -91,6 +91,25 @@ npm run dev
       <google-codelab-step label="Supabase Auth" duration="0">
         <p>Supabase Auth makes it easy to implement authentication and authorization in your app. It provides client SDKs and API endpoints to help you create and manage users.</p>
 <p>Users can use many popular Auth methods, including password, magic link, one-time password (OTP), social login, and single sign-on (SSO). In this sample app, we use Zoom as auth provider.</p>
+<h2 is-upgraded>Supabase Utility Functions</h2>
+<p>This sample app includes reusable Supabase utility functions located in the utils/supabase folder. These functions help streamline client creation, session management, and database operations across both client and server environments.</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>File Path</p>
+</td><td colspan="1" rowspan="1"><p>Purpose</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>utils/supabase/client.ts</code></p>
+</td><td colspan="1" rowspan="1"><p>Initializes a Supabase client for use in browser environments.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>utils/supabase/middleware.ts</code></p>
+</td><td colspan="1" rowspan="1"><p>Middleware to handle session refresh and token persistence.</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>utils/supabase/server.ts</code></p>
+</td><td colspan="1" rowspan="1"><p>Initializes a Supabase client for use in server-side rendering (SSR).</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p><code>utils/supabase/task-service.ts</code></p>
+</td><td colspan="1" rowspan="1"><p>Provides utility functions for interacting with tasks in the database (e.g., delete).</p>
+</td></tr>
+</table>
 <h2 is-upgraded>Resources</h2>
 <ul>
 <li><a href="https://supabase.com/docs/guides/auth" target="_blank">Supabase Auth</a></li>
@@ -100,8 +119,45 @@ npm run dev
 
       </google-codelab-step>
     
-      <google-codelab-step label="Add Supabase Auth Route" duration="0">
-        <p>Path:</p>
+      <google-codelab-step label="Add Supabase Actions and Auth Route" duration="0">
+        <h2 is-upgraded>Supabase Server Actions</h2>
+<p>Path:</p>
+<pre><code language="language-bash" class="language-bash">app/actions.ts
+</code></pre>
+<pre><code language="language-javascript" class="language-javascript">&#34;use server&#34;;
+
+import { encodedRedirect } from &#34;@/utils/utils&#34;;
+import { createClient } from &#34;@/utils/supabase/server&#34;;
+import { headers } from &#34;next/headers&#34;;
+import { redirect } from &#34;next/navigation&#34;;
+
+export const signInWithZoom = async () =&gt; {
+  const supabase = await createClient();
+  const headerList = await headers();
+  const origin = headerList.get(&#34;origin&#34;);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: &#39;zoom&#39;,
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  });
+
+  if (error)
+    return encodedRedirect(&#34;error&#34;, &#34;/sign-in&#34;, error.message);
+
+  return redirect(data.url);
+}
+
+export const signOutAction = async () =&gt; {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  return redirect(&#34;/&#34;);
+};
+
+</code></pre>
+<h2 is-upgraded>Supabase Auth Route</h2>
+<p>Path:</p>
 <pre><code language="language-bash" class="language-bash">app/auth/callback/route.ts
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">import { NextResponse } from &#39;next/server&#39;
@@ -136,8 +192,156 @@ export async function GET(request: Request) {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Add Supabase signin server action" duration="0">
-        <p>Path:</p>
+      <google-codelab-step label="Add Supabase Auth Components" duration="0">
+        <h2 is-upgraded>User Profile Component</h2>
+<p>Path:</p>
+<pre><code language="language-bash" class="language-bash">components/auth/user-nav.tsx
+
+</code></pre>
+<pre><code language="language-javascript" class="language-javascript">&#39;use server&#39;
+
+import { Avatar, AvatarFallback } from &#34;@/components/ui/avatar&#34;;
+import Image from &#34;next/image&#34;;
+import { Button } from &#34;@/components/ui/button&#34;;
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from &#34;@/components/ui/dropdown-menu&#34;;
+
+import {createClient} from &#34;@/utils/supabase/server&#34;;
+import Link from &#34;next/link&#34;;
+
+import {signOutAction} from &#34;@/app/actions&#34;;
+
+const getInitials = (n: string) =&gt;
+    n.split(&#34; &#34;)
+      .map(word =&gt; word.charAt(0).toUpperCase())
+      .join(&#39;&#39;);
+
+export async function UserNav() {
+  const supabase = await createClient();
+  const {data: { user },} = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { user_metadata: {name, email, avatar_url } } = user;
+
+  const initials = getInitials(name);
+
+  return (
+    &lt;DropdownMenu&gt;
+      &lt;DropdownMenuTrigger asChild&gt;
+        &lt;Button variant=&#34;ghost&#34; className=&#34;relative h-8 w-8 rounded-full&#34;&gt;
+          &lt;Avatar className=&#34;h-9 w-9&#34;&gt;
+            &lt;Image
+            src={avatar_url}
+            width={100}
+            height={100}
+            alt={name}&gt;&lt;/Image&gt;
+            &lt;AvatarFallback&gt;{initials}&lt;/AvatarFallback&gt;
+          &lt;/Avatar&gt;
+        &lt;/Button&gt;
+      &lt;/DropdownMenuTrigger&gt;
+      &lt;DropdownMenuContent className=&#34;w-56&#34; align=&#34;end&#34; forceMount&gt;
+        &lt;DropdownMenuLabel className=&#34;font-normal&#34;&gt;
+          &lt;Link href=&#34;/user&#34; className=&#34;flex flex-col space-y-1&#34;&gt;
+            &lt;p className=&#34;text-sm font-medium leading-none&#34;&gt;{name}&lt;/p&gt;
+            &lt;p className=&#34;text-xs leading-none text-muted-foreground&#34;&gt;
+              {email}
+            &lt;/p&gt;
+          &lt;/Link&gt;
+        &lt;/DropdownMenuLabel&gt;
+        &lt;DropdownMenuSeparator /&gt;
+        &lt;DropdownMenuItem onClick={signOutAction}&gt;
+            &lt;Link href=&#34;&#34;&gt;Log out&lt;/Link&gt;
+        &lt;/DropdownMenuItem&gt;
+      &lt;/DropdownMenuContent&gt;
+    &lt;/DropdownMenu&gt;
+
+  );
+}
+
+</code></pre>
+<h2 is-upgraded>Auth Header Component</h2>
+<p>Path:</p>
+<pre><code language="language-bash" class="language-bash">components/auth/header-auth.tsx
+
+</code></pre>
+<pre><code language="language-javascript" class="language-javascript">import { signInWithZoom } from &#34;@/app/actions&#34;;
+import { hasEnvVars } from &#34;@/utils/supabase/check-env-vars&#34;;
+import { UserNav } from &#34;@/components/auth/user-nav&#34;
+import { Badge } from &#34;../ui/badge&#34;;
+import { Button } from &#34;../ui/button&#34;;
+import { createClient } from &#34;@/utils/supabase/server&#34;;
+
+export default async function AuthButton() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!hasEnvVars) {
+    return (
+      &lt;&gt;
+        &lt;div className=&#34;flex gap-4 items-center&#34;&gt;
+          &lt;div&gt;
+            &lt;Badge
+              variant={&#34;default&#34;}
+              className=&#34;font-normal pointer-events-none&#34;
+            &gt;
+              Please update .env.local file with anon key and url
+            &lt;/Badge&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/&gt;
+    );
+  }
+  
+  return user ? (
+      &lt;div className=&#34;flex items-center gap-4&#34;&gt;
+          &lt;div className=&#34;flex items-center space-x-2&#34;&gt;
+              &lt;UserNav/&gt;
+          &lt;/div&gt;
+      &lt;/div&gt;
+  ) : (
+      &lt;div className=&#34;flex gap-2&#34;&gt;
+          &lt;Button onClick={signInWithZoom}&gt;
+              Sign in With Zoom
+          &lt;/Button&gt;
+      &lt;/div&gt;
+  );
+}
+
+
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Update Page and Layout" duration="8">
+        <h2 is-upgraded>Update Layout Component</h2>
+<p>Path:</p>
+<pre><code language="language-bash" class="language-bash">app/layout.tsx
+
+</code></pre>
+<pre><code language="language-javascript" class="language-javascript">import HeaderAuth from &#34;@/components/auth/header-auth&#34;;
+
+...
+
+{!hasEnvVars ? &lt;EnvVarWarning /&gt; : HeaderAuth}
+
+...
+
+</code></pre>
+<h2 is-upgraded>Update Page Component</h2>
+<p>Path:</p>
 <pre><code language="language-bash" class="language-bash">app/dashboard/page.tsx
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">import { createClient } from &#34;@/utils/supabase/server&#34;;
@@ -174,194 +378,6 @@ export default async function DashboardPage() {
     &lt;/div&gt;
   );
 }
-</code></pre>
-<h2 is-upgraded>Add Supabase signin server action</h2>
-<p>Path:</p>
-<pre><code language="language-bash" class="language-bash">app/action.ts
-</code></pre>
-<pre><code language="language-javascript" class="language-javascript">&#34;use server&#34;;
-
-import { encodedRedirect } from &#34;@/utils/utils&#34;;
-import { createClient } from &#34;@/utils/supabase/server&#34;;
-import { headers } from &#34;next/headers&#34;;
-import { redirect } from &#34;next/navigation&#34;;
-
-export const signInWithZoom = async () =&gt; {
-  const supabase = await createClient();
-  const headerList = await headers();
-  const origin = headerList.get(&#34;origin&#34;);
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: &#39;zoom&#39;,
-    options: {
-      redirectTo: `${origin}/auth/callback`,
-    },
-  });
-
-  if (error)
-    return encodedRedirect(&#34;error&#34;, &#34;/sign-in&#34;, error.message);
-
-  return redirect(data.url);
-}
-
-export const signOutAction = async () =&gt; {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  return redirect(&#34;/&#34;);
-};
-</code></pre>
-
-
-      </google-codelab-step>
-    
-      <google-codelab-step label="Add Supabase server" duration="0">
-        <p>Path:</p>
-<pre><code language="language-bash" class="language-bash">supabase/client.ts
-
-</code></pre>
-<p>middleware.ts</p>
-<pre><code language="language-javascript" class="language-javascript">import { createServerClient } from &#34;@supabase/ssr&#34;;
-import { cookies } from &#34;next/headers&#34;;
-
-export const createClient = async () =&gt; {
-  const cookieStore = await cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =&gt; {
-              cookieStore.set(name, value, options);
-            });
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    },
-  );
-};
-</code></pre>
-<h2 is-upgraded>Add Supabase client</h2>
-<p>Path:</p>
-<pre><code language="language-bash" class="language-bash">supabase/client.ts
-
-</code></pre>
-<p>middleware.ts</p>
-<pre><code language="language-javascript" class="language-javascript">import { createBrowserClient } from &#34;@supabase/ssr&#34;;
-
-export const createClient = () =&gt;
-  createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-</code></pre>
-<h2 is-upgraded>Add Supabase middleware</h2>
-<p>Path:</p>
-<pre><code language="language-bash" class="language-bash">supabase/middleware.ts
-
-</code></pre>
-<p>middleware.ts</p>
-<pre><code language="language-javascript" class="language-javascript">import { createServerClient } from &#34;@supabase/ssr&#34;;
-import { type NextRequest, NextResponse } from &#34;next/server&#34;;
-
-export const updateSession = async (request: NextRequest) =&gt; {
-  // This `try/catch` block is only here for the interactive tutorial.
-  // Feel free to remove once you have Supabase connected.
-  try {
-    // Create an unmodified response
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =&gt;
-              request.cookies.set(name, value),
-            );
-            response = NextResponse.next({
-              request,
-            });
-            cookiesToSet.forEach(({ name, value, options }) =&gt;
-              response.cookies.set(name, value, options),
-            );
-          },
-        },
-      },
-    );
-
-    // This will refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/server-side/nextjs
-    const user = await supabase.auth.getUser();
-
-    // protected routes
-    if (request.nextUrl.pathname.startsWith(&#34;/dashboard&#34;) &amp;&amp; user.error) {
-      return NextResponse.redirect(new URL(&#34;/&#34;, request.url));
-    }
-
-    if (request.nextUrl.pathname === &#34;/&#34; &amp;&amp; !user.error) {
-      return NextResponse.redirect(new URL(&#34;/dashboard&#34;, request.url));
-    }
-
-    return response;
-  } catch (e) {
-    // If you are here, a Supabase client could not be created!
-    // This is likely because you have not set up environment variables.
-    // Check out http://localhost:3000 for Next Steps.
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-  }
-};
-</code></pre>
-
-
-      </google-codelab-step>
-    
-      <google-codelab-step label="Update NextJS config" duration="8">
-        <p>Path:</p>
-<pre><code language="language-bash" class="language-bash">next.configjs
-
-</code></pre>
-<pre><code language="language-javascript" class="language-javascript">/** @type {import(&#39;next&#39;).NextConfig} */
-const nextConfig = {
-    images: {
-        remotePatterns: [
-            {
-                protocol: &#39;https&#39;,
-                hostname: &#39;*.zoom.us&#39;,
-                pathname: &#39;/p/v2/**&#39;,
-            },
-            {
-                protocol: &#39;https&#39;,
-                hostname: &#39;zoom.us&#39;,
-                pathname: &#39;/**&#39;,
-            },
-        ],
-    },
-};
-
-module.exports = nextConfig;
-
 </code></pre>
 
 
