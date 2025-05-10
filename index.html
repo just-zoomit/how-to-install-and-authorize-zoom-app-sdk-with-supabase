@@ -325,7 +325,7 @@ export default async function AuthButton() {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Update Page and Layout" duration="8">
+      <google-codelab-step label="Update Page and Layout" duration="0">
         <h2 is-upgraded>Update Layout Component</h2>
 <p>Path:</p>
 <pre><code language="language-bash" class="language-bash">app/layout.tsx
@@ -379,6 +379,66 @@ export default async function DashboardPage() {
   );
 }
 </code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="App Home URL: OWASP Secure Headers" duration="8">
+        <p>path:</p>
+<pre><code>next.config.js
+</code></pre>
+<pre><code language="language-javascript" class="language-javascript">const supabaseURL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+/** @type {import(&#39;next&#39;).NextConfig} */
+const nextConfig = {
+   reactStrictMode: false,
+   images: {
+       remotePatterns: [
+           {
+               protocol: &#39;https&#39;,
+               hostname: &#39;*.zoom.us&#39;,
+               pathname: &#39;/p/v2/**&#39;,
+           },
+           {
+               protocol: &#39;https&#39;,
+               hostname: &#39;zoom.us&#39;,
+               pathname: &#39;/**&#39;,
+           },
+       ],
+   },
+   async headers() {
+       return [
+           {
+               source: &#39;/(.*)&#39;,
+               headers: [
+                   {
+                       key: &#39;Strict-Transport-Security&#39;,
+                       value: &#39;max-age=31536000;&#39;
+                   },
+                   {
+                       key: &#34;X-Content-Type-Options&#34;,
+                       value: &#34;nosniff&#34;
+                   },
+                   {
+                       key: &#34;Content-Security-Policy&#34;,
+                       value: `default-src &#39;self&#39; &#39;unsafe-inline&#39; &#39;unsafe-eval&#39; ${supabaseURL};`
+                   },
+                   {
+                       key: &#34;Referrer-Policy&#34;,
+                       value: &#34;same-origin&#34;
+                   }
+               ]
+           }
+       ];
+   }
+};
+
+module.exports = nextConfig;
+</code></pre>
+<h2 is-upgraded>Resource</h2>
+<ul>
+<li><a href="https://developers.zoom.us/docs/zoom-apps/security/owasp/" target="_blank">Zoom App: OWASP Headers</a></li>
+</ul>
 
 
       </google-codelab-step>
