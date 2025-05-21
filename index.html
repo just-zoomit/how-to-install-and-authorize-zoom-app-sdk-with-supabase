@@ -68,7 +68,7 @@
 
       </google-codelab-step>
     
-      <google-codelab-step label="Project Setup" duration="0">
+      <google-codelab-step label="Set up the project" duration="0">
         <p>If you&#39;re starting from this step, let&#39;s first set up your development environment</p>
 <ol type="1">
 <li>Clone the project and switch to the correct branch:</li>
@@ -90,7 +90,7 @@ npm run dev
 
       </google-codelab-step>
     
-      <google-codelab-step label="Supabase Auth" duration="0">
+      <google-codelab-step label="Overview: Supabase Auth" duration="0">
         <p>Supabase Auth makes it easy to implement authentication and authorization in your app. It provides client SDKs and API endpoints to help you create and manage users.</p>
 <p>Users can use many popular Auth methods, including password, magic link, one-time password (OTP), social login, and single sign-on (SSO). In this sample app, we use Zoom as auth provider.</p>
 <h2 is-upgraded>Supabase Utility Functions</h2>
@@ -122,8 +122,10 @@ npm run dev
       </google-codelab-step>
     
       <google-codelab-step label="Add Supabase Actions and Auth Route" duration="0">
-        <h2 is-upgraded>Supabase Server Actions</h2>
-<p>Path:</p>
+        <p>Authentication and authorization are core responsibilities of any auth system. Supabase supports third-party authentication providers, including Zoom, using the OAuth 2.0 PKCE flow. Supabase&#39;s signInWithOAuth method handles the authentication phase—verifying the user&#39;s identity. When executed successfully, signInWithOAuth initiates the OAuth flow and redirects the user to the following callback route: <code>${origin}/auth/callback</code> route.</p>
+<p>You will configure this route to handle the authorization phase—determining what resources the authenticated user is allowed to access.</p>
+<h2 is-upgraded>Supabase Server Actions</h2>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/actions.ts
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">&#34;use server&#34;;
@@ -159,7 +161,8 @@ export const signOutAction = async () =&gt; {
 
 </code></pre>
 <h2 is-upgraded>Supabase Auth Route</h2>
-<p>Path:</p>
+<p>This API route handles the authorization phase of the authentication flow. It receives the authorization code returned from the signInWithOAuth call and exchanges it to initiate a Supabase session. Once the session is successfully established, the route redirects the user to the app&#39;s protected dashboard page.</p>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/auth/callback/route.ts
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">import { NextResponse } from &#39;next/server&#39;
@@ -190,13 +193,19 @@ export async function GET(request: Request) {
   }
 }
 </code></pre>
+<h2 is-upgraded>Resources</h2>
+<ul>
+<li><a href="https://supabase.com/docs/guides/auth#configure-third-party-providers" target="_blank">Auth</a></li>
+<li><a href="https://supabase.com/docs/reference/javascript/auth-signinwithoauth" target="_blank">Sign in a user through OAuth</a></li>
+<li><a href="https://supabase.com/docs/reference/javascript/auth-signinwithsso" target="_blank">Sign out a user</a></li>
+</ul>
 
 
       </google-codelab-step>
     
       <google-codelab-step label="Add Supabase Auth Components" duration="0">
         <h2 is-upgraded>User Profile Component</h2>
-<p>Path:</p>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">components/auth/user-nav.tsx
 
 </code></pre>
