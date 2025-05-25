@@ -121,10 +121,10 @@ npm run dev
 
       </google-codelab-step>
     
-      <google-codelab-step label="Add Supabase Actions and Auth Route" duration="0">
-        <p>Authentication and authorization are core responsibilities of any auth system. Supabase supports third-party authentication providers, including Zoom, using the OAuth 2.0 PKCE flow. Supabase&#39;s signInWithOAuth method handles the authentication phase—verifying the user&#39;s identity. When executed successfully, signInWithOAuth initiates the OAuth flow and redirects the user to the following callback route: <code>${origin}/auth/callback</code> route.</p>
-<p>You will configure this route to handle the authorization phase—determining what resources the authenticated user is allowed to access.</p>
+      <google-codelab-step label="Add Auth Flow with Supabase and Zoom" duration="0">
+        <p>In this section, you will implement OAuth 2.0 PKCE authentication flow using Supabase and Zoom as the authentication provider.</p>
 <h2 is-upgraded>Supabase Server Actions</h2>
+<p>First, we&#39;ll implement the Supabase signInWithOAuth method to authenticate users. This method verifies user identity, initiates the PKCE OAuth flow, and directs a code to the ${origin}/auth/callback route. With this code, we can obtain Supabase Provider tokens to authenticate against both the Supabase and Zoom REST APIs.</p>
 <p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/actions.ts
 </code></pre>
@@ -161,7 +161,7 @@ export const signOutAction = async () =&gt; {
 
 </code></pre>
 <h2 is-upgraded>Supabase Auth Route</h2>
-<p>This API route handles the authorization phase of the authentication flow. It receives the authorization code returned from the signInWithOAuth call and exchanges it to initiate a Supabase session. Once the session is successfully established, the route redirects the user to the app&#39;s protected dashboard page.</p>
+<p>Next, we&#39;ll create the API route handles the authorization phase of the authentication flow. It receives the authorization code returned from the signInWithOAuth call and exchanges it to initiate a Supabase session. Once the session is successfully established, the route redirects the user to the app&#39;s protected dashboard page.</p>
 <p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/auth/callback/route.ts
 </code></pre>
@@ -196,6 +196,7 @@ export async function GET(request: Request) {
 <h2 is-upgraded>Resources</h2>
 <ul>
 <li><a href="https://supabase.com/docs/guides/auth#configure-third-party-providers" target="_blank">Auth</a></li>
+<li><a href="https://supabase.com/docs/guides/auth/social-login#provider-tokens" target="_blank">Provider tokens</a></li>
 <li><a href="https://supabase.com/docs/reference/javascript/auth-signinwithoauth" target="_blank">Sign in a user through OAuth</a></li>
 <li><a href="https://supabase.com/docs/reference/javascript/auth-signinwithsso" target="_blank">Sign out a user</a></li>
 </ul>
@@ -203,8 +204,10 @@ export async function GET(request: Request) {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Add Supabase Auth Components" duration="0">
-        <h2 is-upgraded>User Profile Component</h2>
+      <google-codelab-step label="Add Supabase auth components" duration="0">
+        <p>In this section, you will create components for the Sign in with Zoom button to initiate authentication and the Sign out button to terminate the session.</p>
+<h2 is-upgraded>User profile component</h2>
+<p>Let&#39;s create a <code>Profile</code> component that includes a sign-out button. This button will call the Supabase sign-out API to end the user session.</p>
 <p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">components/auth/user-nav.tsx
 
@@ -279,8 +282,9 @@ export async function UserNav() {
 }
 
 </code></pre>
-<h2 is-upgraded>Auth Header Component</h2>
-<p>Path:</p>
+<h2 is-upgraded>Auth header component</h2>
+<p>Now let&#39;s create a SignInWithZoom component that includes a Sign in with Zoom button. This button will call the Supabase signInWithOAuth method to initiate the user session.</p>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">components/auth/header-auth.tsx
 
 </code></pre>
@@ -336,9 +340,11 @@ export default async function AuthButton() {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Update Page and Layout" duration="0">
-        <h2 is-upgraded>Update Layout Component</h2>
-<p>Path:</p>
+      <google-codelab-step label="Update page and layout" duration="0">
+        <p>In this section, you will import the HeaderAuth component into the layout and update the dashboard page to validate user authentication.</p>
+<h2 is-upgraded>Update layout component</h2>
+<p>Import the HeaderAuth component and include it in the layout&#39;s header section.</p>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/layout.tsx
 
 </code></pre>
@@ -351,8 +357,9 @@ export default async function AuthButton() {
 ...
 
 </code></pre>
-<h2 is-upgraded>Update Page Component</h2>
-<p>Path:</p>
+<h2 is-upgraded>Update page component</h2>
+<p>Check if the user is authenticated. If not, redirect them to the sign-in page.</p>
+<p><strong>Path:</strong></p>
 <pre><code language="language-bash" class="language-bash">app/dashboard/page.tsx
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">import { createClient } from &#34;@/utils/supabase/server&#34;;
@@ -394,8 +401,29 @@ export default async function DashboardPage() {
 
       </google-codelab-step>
     
-      <google-codelab-step label="Zoom App Home URL: OWASP Secure Headers" duration="8">
-        <p>path:</p>
+      <google-codelab-step label="Zoom App Home URL: OWASP secure headers" duration="8">
+        <p>In this section, you will configure your server to include the required security headers for the app&#39;s Home URL. These headers, recommended by the OWASP Secure Headers Project, help mitigate common security vulnerabilities.</p>
+<h2 is-upgraded>🔐 Essential Security Headers</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p><strong>Header</strong></p>
+</td><td colspan="2" rowspan="1"><p><strong>Purpose</strong></p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Strict-Transport-Security</strong></p>
+</td><td colspan="2" rowspan="1"><p>Forces browsers to use HTTPS for all future requests to your site, reducing man-in-the-middle risks.</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>X-Content-Type-Options</strong></p>
+</td><td colspan="2" rowspan="1"><p>Prevents browsers from MIME-sniffing a response away from the declared content type.</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Content-Security-Policy</strong></p>
+</td><td colspan="2" rowspan="1"><p>Restricts the domains the browser can load resources (scripts, styles, media, etc.) from.</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+<tr><td colspan="1" rowspan="1"><p><strong>Referrer-Policy</strong></p>
+</td><td colspan="2" rowspan="1"><p>Controls how much referrer information (URL) is sent with requests.</p>
+</td><td colspan="1" rowspan="1"></td></tr>
+</table>
+<h2 is-upgraded>Add OWASP secure headers to next.config.js</h2>
+<p>To ensure compatibility with the Zoom client, let&#39;s configure your the app to include the required OWASP headers. Without these headers, your app will not render in the Zoom client and may result in a white screen.</p>
+<p><strong>path:</strong></p>
 <pre><code>next.config.js
 </code></pre>
 <pre><code language="language-javascript" class="language-javascript">const supabaseURL = process.env.NEXT_PUBLIC_SUPABASE_URL;
